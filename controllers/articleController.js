@@ -39,12 +39,7 @@ const generateUniqueSlug = async (title, articleId = null) => {
 
 exports.getArticles = async (req, res, next) => {
   try {
-    const articles = await Article.find({
-      published: true,
-      archived: false,
-    }).sort({
-      createdAt: -1,
-    });
+    const articles = await Article.find().sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
