@@ -65,8 +65,8 @@ exports.getArticle = async (req, res, next) => {
 
     const article = await Article.findOne({
       _id: id,
-      published: true,
-      archived: false,
+      // published: true,
+      // archived: false,
     });
 
     if (!article) {
