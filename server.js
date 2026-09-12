@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const articleRoutes = require("./routes/articleRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 /*
 |--------------------------------------------------------------------------
@@ -88,6 +89,14 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/articles", articleRoutes);
 
+
+/*
+|--------------------------------------------------------------------------
+| User Routes
+|--------------------------------------------------------------------------
+*/
+
+app.use("/api/users", userRoutes);
 
 /*
 |--------------------------------------------------------------------------

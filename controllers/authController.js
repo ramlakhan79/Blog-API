@@ -11,48 +11,76 @@ const generateToken = (user) => {
     process.env.JWT_SECRET,
     {
       expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-    },
+    }
   );
 };
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, username, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !username || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message: "Name, username, email and password are required",
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedUsername = username.toLowerCase().trim();
+    const normalizedEmail = email.toLowerCase().trim();
+
+    if (!/^[a-z0-9_]+$/.test(normalizedUsername)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Username can contain only lowercase letters, numbers and underscores",
+      });
+    }
+
+    if (normalizedUsername.length < 3 || normalizedUsername.length > 30) {
+      return res.status(400).json({
+        success: false,
+        message: "Username must be between 3 and 30 characters",
+      });
+    }
+
+    const existingUser = await User.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { username: normalizedUsername },
+      ],
+    });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists",
+        message:
+          existingUser.username === normalizedUsername
+            ? "Username already exists"
+            : "Email already exists",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      username: normalizedUsername,
+      email: normalizedEmail,
       password: hashedPassword,
-      role: "admin",
+      role: "viewer",
     });
 
     const token = generateToken(user);
 
     res.status(201).json({
       success: true,
-      message: "Admin registered successfully",
+      message: "Registration successful",
       token,
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
         role: user.role,
       },
@@ -62,23 +90,71 @@ const register = async (req, res, next) => {
   }
 };
 
-const login = async (req, res, next) => {
+const checkUsername = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const username = req.query.username?.toLowerCase().trim();
 
-    if (!email || !password) {
+    if (!username) {
       return res.status(400).json({
         success: false,
-        message: "Email and password are required",
+        message: "Username is required",
       });
     }
 
-    const user = await User.findOne({ email });
+    if (!/^[a-z0-9_]+$/.test(username)) {
+      return res.status(200).json({
+        success: true,
+        available: false,
+        message:
+          "Username can contain only lowercase letters, numbers and underscores",
+      });
+    }
+
+    if (username.length < 3 || username.length > 30) {
+      return res.status(200).json({
+        success: true,
+        available: false,
+        message: "Username must be between 3 and 30 characters",
+      });
+    }
+
+    const existingUser = await User.exists({
+      username,
+    });
+
+    res.status(200).json({
+      success: true,
+      available: !existingUser,
+      message: existingUser
+        ? "Username already exists"
+        : "Username is available",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const login = async (req, res, next) => {
+  try {
+    const { identifier, password } = req.body;
+
+    if (!identifier || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Username/email and password are required",
+      });
+    }
+
+    const value = identifier.toLowerCase().trim();
+
+    const user = await User.findOne({
+      $or: [{ email: value }, { username: value }],
+    });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid username/email or password",
       });
     }
 
@@ -87,7 +163,7 @@ const login = async (req, res, next) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid username/email or password",
       });
     }
 
@@ -100,6 +176,7 @@ const login = async (req, res, next) => {
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
         role: user.role,
       },
@@ -111,5 +188,6 @@ const login = async (req, res, next) => {
 
 module.exports = {
   register,
+  checkUsername,
   login,
 };

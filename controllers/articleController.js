@@ -39,7 +39,10 @@ const generateUniqueSlug = async (title, articleId = null) => {
 
 exports.getArticles = async (req, res, next) => {
   try {
-    const articles = await Article.find().sort({ createdAt: -1 });
+    const articles = await Article.find({
+      // published: true,
+      // archived: false,
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -95,29 +98,50 @@ exports.getArticle = async (req, res, next) => {
 
 exports.createArticle = async (req, res, next) => {
   try {
+    const excerpt = req.body.excerpt;
+    if (excerpt && !req.body.desc) {
+      req.body.desc = excerpt;
+    }
     const { title, desc, content, category, tags, image, read, published } =
       req.body;
 
-    if (!title || !desc || !content || !category) {
+    if (!title || ( !desc && !excerpt ) || !content || !category) {
+      console.error("Missing required fields:", {
+        title,
+        desc,
+        excerpt,
+        content,
+        category
+      });
       return res.status(400).json({
         success: false,
         message: "Title, description, content and category are required",
       });
     }
+    if (!req.user?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "User authentication required",
+      });
+    }    
 
     const slug = await generateUniqueSlug(title);
 
     const article = await Article.create({
-      title,
+      title: title.trim(),
       slug,
-      desc,
+      desc: desc.trim(),
       content,
-      category,
+      category: category.trim(),
       tags: Array.isArray(tags) ? tags : [],
       image: image || "",
       read: read || "5 min read",
       published: published !== undefined ? published : true,
+      publishedAt: published !== false ? new Date() : null,
       archived: false,
+
+      createdBy: req.user.id,
+      updatedBy: req.user.id,
     });
 
     res.status(201).json({
@@ -126,6 +150,7 @@ exports.createArticle = async (req, res, next) => {
       article,
     });
   } catch (error) {
+    console.error("Error creating article:", error);
     next(error);
   }
 };
@@ -149,6 +174,10 @@ exports.updateArticle = async (req, res, next) => {
         success: false,
         message: "Article not found",
       });
+    }
+    const excerpt = req.body.excerpt;
+    if (excerpt && !req.body.desc) {
+      req.body.desc = excerpt;
     }
 
     const { title, desc, content, category, tags, image, read, published } =
