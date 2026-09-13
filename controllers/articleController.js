@@ -118,7 +118,7 @@ exports.createArticle = async (req, res, next) => {
         message: "Title, description, content and category are required",
       });
     }
-    if (!req.user?.id) {
+    if (!req.user?.username) {
       return res.status(401).json({
         success: false,
         message: "User authentication required",
@@ -140,8 +140,8 @@ exports.createArticle = async (req, res, next) => {
       publishedAt: published !== false ? new Date() : null,
       archived: false,
 
-      createdBy: req.user.id,
-      updatedBy: req.user.id,
+      createdBy: req.user.username,
+      updatedBy: req.user.username,
     });
 
     res.status(201).json({

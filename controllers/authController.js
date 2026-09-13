@@ -126,7 +126,7 @@ const checkUsername = async (req, res, next) => {
       success: true,
       available: !existingUser,
       message: existingUser
-        ? "Username already exists"
+        ? `The username ${username} is taken.`
         : "Username is available",
     });
   } catch (error) {
