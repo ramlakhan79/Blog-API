@@ -118,7 +118,7 @@ exports.createArticle = async (req, res, next) => {
         message: "Title, description, content and category are required",
       });
     }
-    if (!req.user?.username) {
+    if (!req.user?.id) {
       return res.status(401).json({
         success: false,
         message: "User authentication required",
@@ -126,7 +126,6 @@ exports.createArticle = async (req, res, next) => {
     }    
 
     const slug = await generateUniqueSlug(title);
-
     const article = await Article.create({
       title: title.trim(),
       slug,
