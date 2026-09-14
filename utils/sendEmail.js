@@ -14,7 +14,7 @@ export const sendOTPEmail = async (email, otp) => {
     to: email,
     subject: "Your Email Verification OTP",
     text: `Your OTP is ${otp}. It will expire in ${
-      process.env.OTP_EXPIRE_MINUTES || 10
+      process.env.OTP_EXPIRE_MINUTES || 1
     } minutes.`,
     html: `
       <div style="font-family:Arial,sans-serif;background:#111827;padding:30px;">
@@ -43,7 +43,7 @@ export const sendOTPEmail = async (email, otp) => {
 
           <p style="color:#9ca3af;">
             This OTP will expire in ${
-              process.env.OTP_EXPIRE_MINUTES || 10
+              process.env.OTP_EXPIRE_MINUTES || 1
             } minutes.
           </p>
 

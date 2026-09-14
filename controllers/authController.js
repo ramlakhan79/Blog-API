@@ -123,7 +123,7 @@ const verifyRegistrationOTP = async (req, res) => {
         .json({ message: "OTP has expired. Please request a new OTP." });
     }
 
-    if (otpRecord.attempts >= 5) {
+    if (otpRecord.attempts >= 3) {
       await EmailOTP.deleteOne({ _id: otpRecord._id });
       return res.status(429).json({
         message: "Too many incorrect attempts. Please request a new OTP.",
@@ -172,7 +172,7 @@ const verifyRegistrationOTP = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (error) {
-    console.error("Verify registration error:", error);
+    // console.error("Verify registration error:", error);
     res.status(500).json({ message: "Registration failed" });
   }
 };
@@ -424,7 +424,7 @@ const googleLogin = async (req, res) => {
         emailVerified: true,
         authProvider: "google",
       });
-    }
+    }    
 
     const token = createToken(user);
 
