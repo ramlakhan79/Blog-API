@@ -13,7 +13,7 @@ const {
   getPreviousArticle,
 } = require("../controllers/articleController");
 
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, adminOnly, contributorOnly, adminOrContributor } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -57,9 +57,9 @@ router.get("/:id/previous", getPreviousArticle);
 |--------------------------------------------------------------------------
 */
 
-router.post("/", protect, adminOnly, createArticle);
+router.post("/", protect, adminOrContributor, createArticle);
 
-router.put("/:id", protect, adminOnly, updateArticle);
+router.put("/:id", protect, adminOrContributor, updateArticle);
 
 /*
 |--------------------------------------------------------------------------

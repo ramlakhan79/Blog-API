@@ -36,7 +36,33 @@ const adminOnly = (req, res, next) => {
   next();
 };
 
+const contributorOnly = (req, res, next) => {
+  console.log("User role:", req.user.role); // Log the user role for debugging
+  if (!req.user || req.user.role !== "contributor") {
+    return res.status(403).json({
+      success: false,
+      message: "Contributor access required",
+    });
+  }
+
+  next();
+};
+
+const adminOrContributor = (req, res, next) => {
+  if (!req.user || !["admin", "contributor"].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Admin or contributor access required",
+    });
+  }
+
+  next();
+};
+
 module.exports = {
   protect,
   adminOnly,
+  contributorOnly,
+  adminOrContributor,
 };
+
