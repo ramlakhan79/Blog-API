@@ -5,7 +5,7 @@ const { OAuth2Client } = require("google-auth-library");
 
 const User = require("../models/User");
 
-const EmailOTP = require("../models/emailOTP.js");
+const EmailOTP = require("../models/EmailOTP");
 const { sendOTPEmail } = require("../utils/sendEmail");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
