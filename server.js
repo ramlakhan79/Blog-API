@@ -2,12 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 
-const connectDB = require("./config/db");
-const articleRoutes = require("./routes/articleRoutes");
-const errorMiddleware = require("./middleware/errorMiddleware");
-const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
-
 /*
 |--------------------------------------------------------------------------
 | Load Environment Variables
@@ -16,11 +10,18 @@ const userRoutes = require("./routes/userRoutes");
 
 dotenv.config();
 
+const connectDB = require("./config/db");
+const articleRoutes = require("./routes/articleRoutes");
+const errorMiddleware = require("./middleware/errorMiddleware");
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes");
+
 /*
 |--------------------------------------------------------------------------
 | Connect MongoDB
 |--------------------------------------------------------------------------
 */
+
 
 connectDB();
 

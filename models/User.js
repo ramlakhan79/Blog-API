@@ -1,4 +1,55 @@
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
+
+// const userSchema = new mongoose.Schema(
+//   {
+//     name: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//     },
+
+//     username: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//       lowercase: true,
+//       trim: true,
+//       minlength: 3,
+//       maxlength: 30,
+//       match: /^[a-z0-9_]+$/,
+//     },
+
+//     email: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//       lowercase: true,
+//       trim: true,
+//     },
+
+//     password: {
+//       type: String,
+//       required: true,
+//     },
+
+//     role: {
+//       type: String,
+//       enum: ["admin", "contributor", "viewer"],
+//       default: "viewer",
+//     },
+//     archived: {
+//       type: Boolean,
+//       default: false,
+//     },
+//   },
+//   {
+//     timestamps: true,
+//   },
+// );
+
+// module.exports = mongoose.model("User", userSchema);
+
+ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -14,9 +65,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      minlength: 3,
-      maxlength: 30,
-      match: /^[a-z0-9_]+$/,
     },
 
     email: {
@@ -29,7 +77,7 @@ const userSchema = new mongoose.Schema(
 
     password: {
       type: String,
-      required: true,
+      default: null,
     },
 
     role: {
@@ -37,14 +85,28 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "contributor", "viewer"],
       default: "viewer",
     },
-    archived: {
+
+    googleId: {
+      type: String,
+      default: null,
+      unique: true,
+      sparse: true,
+    },
+
+    emailVerified: {
       type: Boolean,
       default: false,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 module.exports = mongoose.model("User", userSchema);
