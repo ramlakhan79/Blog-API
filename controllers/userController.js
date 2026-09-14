@@ -4,7 +4,7 @@ const User = require("../models/User");
 exports.getUsers = async (req, res, next) => {
   try {
     const users = await User.find({
-      archived: false,
+      // archived: false,
     })
       .select("-password")
       .sort({ createdAt: -1 });

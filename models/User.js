@@ -49,7 +49,7 @@
 
 // module.exports = mongoose.model("User", userSchema);
 
- const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
@@ -85,9 +85,12 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "contributor", "viewer"],
       default: "viewer",
     },
-
+    archived: {
+      type: Boolean,
+      default: false,
+    },
     googleId: {
-      type: String,      
+      type: String,
       unique: true,
       sparse: true,
     },
@@ -105,7 +108,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("User", userSchema);
