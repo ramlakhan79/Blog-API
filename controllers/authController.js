@@ -7,6 +7,10 @@ const User = require("../models/User");
 
 const EmailOTP = require("../models/EmailOTP");
 const { sendOTPEmail } = require("../utils/sendEmail");
+const {
+  sendResetPasswordEmail,
+  sendVerificationEmail,
+} = require("../services/mailService");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -424,7 +428,7 @@ const googleLogin = async (req, res) => {
         emailVerified: true,
         authProvider: "google",
       });
-    }    
+    }
 
     const token = createToken(user);
 
@@ -439,6 +443,313 @@ const googleLogin = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    // Don't reveal whether an email exists
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message:
+          "If an account exists with this email, a password reset link has been sent.",
+      });
+    }
+
+    // Google users don't have a password
+    // if (user.authProvider === "google" || !user.password) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "This account uses Google login. Please continue with Google.",
+    //   });
+    // }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    const resetTokenExpires = new Date(
+      Date.now() +
+        Number(process.env.RESET_PASSWORD_EXPIRE_MINUTES || 15) * 60 * 1000,
+    );
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = resetTokenExpires;
+
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    const emailResult = await sendResetPasswordEmail({
+      email: user.email,
+      name: user.name,
+      resetUrl,
+      expiryMinutes: Number(process.env.RESET_PASSWORD_EXPIRE_MINUTES || 15),
+    });
+
+    if (!emailResult?.success) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+
+      return res.status(500).json({
+        success: false,
+        message: "Unable to send password reset email",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "If an account exists with this email, a password reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process password reset request",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset token is required",
+      });
+    }
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and confirm password are required",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Passwords do not match",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least 6 characters",
+      });
+    }
+
+    const resetTokenHash = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: {
+        $gt: new Date(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Reset link is invalid or has expired",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    user.password = hashedPassword;
+
+    // Invalidate reset token after successful use
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    // If this was previously a local account, keep it local
+    user.authProvider = user.authProvider || "local";
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Password reset successful. You can now login with your new password.",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to reset password",
+    });
+  }
+};
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+    });
+
+    // Do not reveal whether an email exists
+    if (!user) {
+      return res.status(200).json({
+        success: true,
+        message:
+          "If an account exists with this email, a verification email has been sent.",
+      });
+    }
+
+    if (user.emailVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Your email is already verified. Please login.",
+      });
+    }
+
+    // if (user.authProvider === "google") {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message:
+    //       "This account uses Google login. Your email is already verified through Google.",
+    //   });
+    // }
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+
+    const verificationTokenHash = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+
+    const expiryMinutes = Number(
+      process.env.EMAIL_VERIFICATION_EXPIRE_MINUTES || 30,
+    );
+
+    const verificationExpires = new Date(
+      Date.now() + expiryMinutes * 60 * 1000,
+    );
+
+    user.emailVerificationToken = verificationTokenHash;
+    user.emailVerificationExpires = verificationExpires;
+
+    await user.save();
+
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
+
+    const emailResult = await sendVerificationEmail({
+      email: user.email,
+      name: user.name,
+      verificationUrl,
+      expiryMinutes,
+    });
+
+    if (!emailResult?.success) {
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+
+      await user.save();
+
+      return res.status(500).json({
+        success: false,
+        message: "Unable to send verification email",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Verification email sent successfully.",
+    });
+  } catch (error) {
+    console.error("Resend verification email error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to resend verification email",
+    });
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification token is required",
+      });
+    }
+
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      emailVerificationToken: tokenHash,
+      emailVerificationExpires: {
+        $gt: new Date(),
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification link is invalid or has expired.",
+      });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Your email has been successfully verified.",
+    });
+  } catch (error) {
+    console.error("Email verification error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to verify email.",
+    });
+  }
+};
 module.exports = {
   sendRegistrationOTP,
   verifyRegistrationOTP,
@@ -446,4 +757,8 @@ module.exports = {
   checkUsername,
   login,
   googleLogin,
+  forgotPassword,
+  resetPassword,
+  resendVerificationEmail,
+  verifyEmail,
 };

@@ -15,6 +15,7 @@ const articleRoutes = require("./routes/articleRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const testMailRoutes = require("./routes/testMailRoutes");
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +99,14 @@ app.use("/api/articles", articleRoutes);
 */
 
 app.use("/api/users", userRoutes);
+
+/*
+|--------------------------------------------------------------------------
+| Test Routes
+|--------------------------------------------------------------------------
+*/
+
+app.use("/api/test", testMailRoutes);
 
 /*
 |--------------------------------------------------------------------------
