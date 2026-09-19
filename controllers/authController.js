@@ -8,6 +8,7 @@ const User = require("../models/User");
 const EmailOTP = require("../models/EmailOTP");
 const { sendOTPEmail } = require("../utils/sendEmail");
 const {
+  sendOtpEmail,
   sendResetPasswordEmail,
   sendVerificationEmail,
 } = require("../services/mailService");
@@ -91,7 +92,7 @@ const sendRegistrationOTP = async (req, res) => {
       Date.now() + Number(process.env.OTP_EXPIRE_MINUTES || 10) * 60 * 1000,
     );
 
-    await EmailOTP.create({ email: normalizedEmail, otpHash, expiresAt });
+    await sendOtpEmail.create({ email: normalizedEmail, otpHash, expiresAt });
     await sendOTPEmail(normalizedEmail, otp);
 
     res.status(200).json({ message: "OTP sent successfully" });
@@ -121,14 +122,14 @@ const verifyRegistrationOTP = async (req, res) => {
     }
 
     if (otpRecord.expiresAt < new Date()) {
-      await EmailOTP.deleteOne({ _id: otpRecord._id });
+      await sendOtpEmail.deleteOne({ _id: otpRecord._id });
       return res
         .status(400)
         .json({ message: "OTP has expired. Please request a new OTP." });
     }
 
     if (otpRecord.attempts >= 3) {
-      await EmailOTP.deleteOne({ _id: otpRecord._id });
+      await sendOtpEmail.deleteOne({ _id: otpRecord._id });
       return res.status(429).json({
         message: "Too many incorrect attempts. Please request a new OTP.",
       });
@@ -167,7 +168,7 @@ const verifyRegistrationOTP = async (req, res) => {
       authProvider: "local",
     });
 
-    await EmailOTP.deleteOne({ _id: otpRecord._id });
+    await sendOtpEmail.deleteOne({ _id: otpRecord._id });
     const token = createToken(user);
 
     res.status(201).json({
