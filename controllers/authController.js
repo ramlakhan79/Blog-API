@@ -87,13 +87,25 @@ const sendRegistrationOTP = async (req, res) => {
     const otp = generateOTP();
     const otpHash = hashOTP(otp);
     await EmailOTP.deleteMany({ email: normalizedEmail });
-
+    const expiryMinutes = Number(process.env.OTP_EXPIRE_MINUTES || 10);
     const expiresAt = new Date(
       Date.now() + Number(process.env.OTP_EXPIRE_MINUTES || 10) * 60 * 1000,
     );
 
-    await sendOtpEmail.create({ email: normalizedEmail, otpHash, expiresAt });
-    await sendOTPEmail(normalizedEmail, otp);
+    /* Save OTP hash in database */ 
+    await EmailOTP.create({
+      email: normalizedEmail,
+      name: normalizedUsername,
+      otpHash,
+      expiresAt,
+      attempts: 0,
+    });
+    /* Send OTP email */ await sendOtpEmail({
+      email: normalizedEmail,
+      name: normalizedUsername,
+      otp,
+      expiryMinutes,
+    });
 
     res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
@@ -122,14 +134,14 @@ const verifyRegistrationOTP = async (req, res) => {
     }
 
     if (otpRecord.expiresAt < new Date()) {
-      await sendOtpEmail.deleteOne({ _id: otpRecord._id });
+      await EmailOTP.deleteOne({ _id: otpRecord._id });
       return res
         .status(400)
         .json({ message: "OTP has expired. Please request a new OTP." });
     }
 
     if (otpRecord.attempts >= 3) {
-      await sendOtpEmail.deleteOne({ _id: otpRecord._id });
+      await EmailOTP.deleteOne({ _id: otpRecord._id });
       return res.status(429).json({
         message: "Too many incorrect attempts. Please request a new OTP.",
       });
@@ -168,7 +180,7 @@ const verifyRegistrationOTP = async (req, res) => {
       authProvider: "local",
     });
 
-    await sendOtpEmail.deleteOne({ _id: otpRecord._id });
+    await EmailOTP.deleteOne({ _id: otpRecord._id });
     const token = createToken(user);
 
     res.status(201).json({

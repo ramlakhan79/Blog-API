@@ -21,7 +21,7 @@ export const sendOtpEmail = async ({
   email,
   name,
   otp,
-  expiryMinutes = 10,
+  expiryMinutes,
 }) => {
   const template = otpEmail({
     name,
