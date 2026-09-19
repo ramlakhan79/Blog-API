@@ -43,6 +43,8 @@ const {
   checkUsername,
   login,
   googleLogin,
+  githubLogin,
+  githubCallback,
   forgotPassword,
   resetPassword,
   verifyEmail,
@@ -59,6 +61,9 @@ router.get("/check-username", checkUsername);
 
 router.post("/login", login);
 router.post("/google-login", googleLogin);
+
+router.get("/github", githubLogin);
+router.get("/github/callback", githubCallback);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);

@@ -455,6 +455,168 @@ const googleLogin = async (req, res) => {
     res.status(401).json({ message: "Google authentication failed" });
   }
 };
+const githubLogin = async (req, res, next) => {
+  try {
+    const state = jwt.sign(
+      {
+        nonce: crypto.randomBytes(16).toString("hex"),
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "10m",
+      },
+    );
+
+    const params = new URLSearchParams({
+      client_id: process.env.GITHUB_CLIENT_ID,
+      redirect_uri: process.env.GITHUB_CALLBACK_URL,
+      scope: "read:user user:email",
+      state,
+    });
+
+    const githubUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
+
+    res.redirect(githubUrl);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const githubCallback = async (req, res, next) => {
+  try {
+    const { code, state } = req.query;
+
+    if (!code || !state) {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/login?error=github_auth_failed`,
+      );
+    }
+
+    try {
+      jwt.verify(state, process.env.JWT_SECRET);
+    } catch (error) {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/login?error=invalid_github_state`,
+      );
+    }
+
+    const tokenResponse = await fetch(
+      "https://github.com/login/oauth/access_token",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client_id: process.env.GITHUB_CLIENT_ID,
+          client_secret: process.env.GITHUB_CLIENT_SECRET,
+          code,
+          redirect_uri: process.env.GITHUB_CALLBACK_URL,
+        }),
+      },
+    );
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenData.access_token) {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/login?error=github_token_failed`,
+      );
+    }
+
+    const githubAccessToken = tokenData.access_token;
+
+    const githubUserResponse = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${githubAccessToken}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const githubUser = await githubUserResponse.json();
+
+    if (!githubUser.id) {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/login?error=github_profile_failed`,
+      );
+    }
+
+    const emailResponse = await fetch("https://api.github.com/user/emails", {
+      headers: {
+        Authorization: `Bearer ${githubAccessToken}`,
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    });
+
+    const emails = await emailResponse.json();
+
+    const primaryEmail = Array.isArray(emails)
+      ? emails.find((email) => email.primary && email.verified) ||
+        emails.find((email) => email.verified)
+      : null;
+
+    if (!primaryEmail?.email) {
+      return res.redirect(
+        `${process.env.CLIENT_URL}/login?error=github_email_missing`,
+      );
+    }
+
+    const email = primaryEmail.email.toLowerCase();
+
+    let user = await User.findOne({
+      $or: [{ githubId: String(githubUser.id) }, { email }],
+    });
+
+    if (user) {
+      user.githubId = String(githubUser.id);
+
+      if (!user.authProvider || user.authProvider === "local") {
+        user.authProvider = "github";
+      }
+
+      if (!user.avatar && githubUser.avatar_url) {
+        user.avatar = githubUser.avatar_url;
+      }
+
+      user.emailVerified = true;
+
+      await user.save();
+    } else {
+      let username = githubUser.login;
+
+      const existingUsername = await User.findOne({
+        username,
+      });
+
+      if (existingUsername) {
+        username = `${githubUser.login}_${githubUser.id}`;
+      }
+
+      user = await User.create({
+        username,
+        name: githubUser.name || githubUser.login || "GitHub User",
+        email,
+        password: null,
+        githubId: String(githubUser.id),
+        authProvider: "github",
+        avatar: githubUser.avatar_url || null,
+        emailVerified: true,
+        role: "viewer",
+      });
+    }
+
+    const token = generateToken(user);
+
+    const redirectUrl = `${process.env.CLIENT_URL}/github/callback#token=${encodeURIComponent(token)}`;
+
+    res.redirect(redirectUrl);
+  } catch (error) {
+    next(error);
+  }
+};
 
 const forgotPassword = async (req, res) => {
   try {
@@ -770,6 +932,8 @@ module.exports = {
   checkUsername,
   login,
   googleLogin,
+  githubLogin,
+  githubCallback,
   forgotPassword,
   resetPassword,
   resendVerificationEmail,
