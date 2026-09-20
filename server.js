@@ -16,7 +16,7 @@ const errorMiddleware = require("./middleware/errorMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const testMailRoutes = require("./routes/testMailRoutes");
-
+const articlePdfRoutes = require("./routes/articlePdfRoutes");
 /*
 |--------------------------------------------------------------------------
 | Connect MongoDB
@@ -107,6 +107,14 @@ app.use("/api/users", userRoutes);
 */
 
 app.use("/api/test", testMailRoutes);
+
+/*
+|--------------------------------------------------------------------------
+| PDF Routes
+|--------------------------------------------------------------------------
+*/
+
+app.use("/api/article-pdfs", articlePdfRoutes);
 
 /*
 |--------------------------------------------------------------------------
