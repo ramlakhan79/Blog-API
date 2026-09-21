@@ -181,7 +181,6 @@ exports.updateArticle = async (req, res, next) => {
 
     const { title, desc, content, category, tags, image, read, published } =
       req.body;
-
     let slug = article.slug;
 
     if (title && title !== article.title) {
@@ -200,6 +199,8 @@ exports.updateArticle = async (req, res, next) => {
     article.read = read ?? article.read;
 
     article.published = published !== undefined ? published : article.published;
+
+    article.updatedBy = req.user.username;
 
     const updatedArticle = await article.save();
 
