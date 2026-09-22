@@ -11,7 +11,7 @@ const {
   deleteUser,
 } = require("../controllers/userController");
 
-const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { protect, adminOnly, adminOrContributorOrUser } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -23,7 +23,7 @@ router.get("/:id", protect, adminOnly, getUser);
 
 router.post("/", protect, adminOnly, createUser);
 
-router.put("/:id", protect, adminOnly, updateUser);
+router.put("/:id", protect, adminOrContributorOrUser, updateUser);
 
 router.patch("/:id/archive", protect, adminOnly, archiveUser);
 

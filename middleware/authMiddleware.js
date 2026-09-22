@@ -58,11 +58,21 @@ const adminOrContributor = (req, res, next) => {
 
   next();
 };
+const adminOrContributorOrUser = (req, res, next) => {
+  if (!req.user || !["admin", "contributor", "viewer"].includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "Admin or contributor access required",
+    });
+  }
 
+  next();
+};
 module.exports = {
   protect,
   adminOnly,
   contributorOnly,
   adminOrContributor,
+  adminOrContributorOrUser,
 };
 
