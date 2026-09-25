@@ -11,6 +11,12 @@ const {
   deleteArticle,
   getNextArticle,
   getPreviousArticle,
+  likeArticle,
+  getArticleComments,
+  addArticleComment,
+  deleteArticleComment,
+  hideArticleComment,
+  unhideArticleComment,
 } = require("../controllers/articleController");
 
 const { protect, adminOnly, contributorOnly, adminOrContributor } = require("../middleware/authMiddleware");
@@ -78,5 +84,64 @@ router.patch("/:id/restore", protect, adminOnly, restoreArticle);
 */
 
 router.delete("/:id", protect, adminOnly, deleteArticle);
+
+/*
+|--------------------------------------------------------------------------
+| Get Article
+|--------------------------------------------------------------------------
+| Public
+*/
+
+// router.get(
+//     "/:id",
+//     getArticle
+// );
+
+
+/*
+|--------------------------------------------------------------------------
+| Like / Unlike Article
+|--------------------------------------------------------------------------
+| Login required
+*/
+
+router.post(
+    "/:id/like",
+    protect,
+    likeArticle
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Comments
+|--------------------------------------------------------------------------
+| Public
+*/
+
+router.get(
+    "/:id/comments",
+    getArticleComments
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Add Comment
+|--------------------------------------------------------------------------
+| Login required
+*/
+
+router.post(
+    "/:id/comments",
+    protect,
+    addArticleComment
+);
+
+router.delete("/comments/:commentId", protect, deleteArticleComment);
+
+router.post("/comments/:commentId/hide", protect, hideArticleComment);
+
+router.post("/comments/:commentId/unhide", protect, unhideArticleComment);
 
 module.exports = router;
