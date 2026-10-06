@@ -17,6 +17,9 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const testMailRoutes = require("./routes/testMailRoutes");
 const articlePdfRoutes = require("./routes/articlePdfRoutes");
+const projectRoutes = require("./routes/projectRoutes");
+const testimonialRoutes = require("./routes/testimonialRoutes");
+
 /*
 |--------------------------------------------------------------------------
 | Connect MongoDB
@@ -99,6 +102,20 @@ app.use("/api/articles", articleRoutes);
 */
 
 app.use("/api/users", userRoutes);
+
+/*
+|--------------------------------------------------------------------------
+| Project Routes
+|--------------------------------------------------------------------------
+*/
+app.use("/api/projects", projectRoutes);
+
+/*
+|--------------------------------------------------------------------------
+| Testimonial Routes
+|--------------------------------------------------------------------------
+*/
+app.use("/api/testimonials", testimonialRoutes);
 
 /*
 |--------------------------------------------------------------------------
