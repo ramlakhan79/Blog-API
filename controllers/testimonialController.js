@@ -116,8 +116,8 @@ const createTestimonial = async (req, res) => {
       featured,
       published,
       order,
-      createdBy: req.user._id,
-      updatedBy: req.user._id,
+      createdBy: req.user.id,
+      updatedBy: req.user.id,
     });
 
     const populatedTestimonial = await Testimonial.findById(testimonial._id)
