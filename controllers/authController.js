@@ -15,7 +15,25 @@ const {
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const generateToken = (user) => {
+// const generateToken = (user) => {
+//   return jwt.sign(
+//     {
+//       id: user._id,
+//       username: user.username,
+//       role: user.role,
+//     },
+//     process.env.JWT_SECRET,
+//     {
+//       expiresIn: process.env.JWT_EXPIRES_IN || "1d",
+//     },
+//   );
+// };
+
+// const createToken = generateToken;
+const generateToken = (
+  user,
+  expiresIn = process.env.JWT_EXPIRES_IN || "1d",
+) => {
   return jwt.sign(
     {
       id: user._id,
@@ -23,9 +41,7 @@ const generateToken = (user) => {
       role: user.role,
     },
     process.env.JWT_SECRET,
-    {
-      expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-    },
+    { expiresIn },
   );
 };
 
@@ -443,7 +459,7 @@ const googleLogin = async (req, res) => {
       });
     }
 
-    const token = createToken(user);
+    const token = createToken(user, "15d");
 
     res.json({
       message: "Google login successful",
