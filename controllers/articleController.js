@@ -452,32 +452,26 @@ exports.getPreviousArticle = async (req, res, next) => {
 
 exports.getArticle = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    /*
-        |--------------------------------------------------------------------------
-        | Validate article ID
-        |--------------------------------------------------------------------------
-        */
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid article ID",
-      });
-    }
+    const { slug } = req.params;
 
     /*
         |--------------------------------------------------------------------------
         | Find article
         |--------------------------------------------------------------------------
         */
-
-    const article = await Article.findOne({
-      _id: id,
+    const filter = {
       published: true,
       archived: false,
-    }).lean();
+    };
+
+    const article =
+      (await Article.findOne({
+        ...filter,
+        slug,
+      }).lean()) ||
+      (mongoose.Types.ObjectId.isValid(slug)
+        ? await Article.findOne({ ...filter, _id: slug }).lean()
+        : null);
 
     if (!article) {
       return res.status(404).json({
@@ -538,7 +532,7 @@ exports.getArticle = async (req, res) => {
     let isLiked = false;
 
     const authHeader = req.headers.authorization;
-    
+
     if (authHeader && authHeader.startsWith("Bearer ")) {
       try {
         const token = authHeader.split(" ")[1];
