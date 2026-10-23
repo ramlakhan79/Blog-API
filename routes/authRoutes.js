@@ -11,9 +11,12 @@ const {
   githubCallback,
   forgotPassword,
   resetPassword,
+  changePassword,
   verifyEmail,
   resendVerificationEmail,
 } = require("../controllers/authController");
+
+const { authMiddleware } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
@@ -31,6 +34,8 @@ router.get("/github/callback", githubCallback);
 
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+
+router.post("/change-password", authMiddleware, changePassword);
 
 router.post("/resend-verification", resendVerificationEmail);
 router.get("/verify-email/:token", verifyEmail);
