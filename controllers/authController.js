@@ -108,7 +108,7 @@ const sendRegistrationOTP = async (req, res) => {
       Date.now() + Number(process.env.OTP_EXPIRE_MINUTES || 10) * 60 * 1000,
     );
 
-    /* Save OTP hash in database */ 
+    /* Save OTP hash in database */
     await EmailOTP.create({
       email: normalizedEmail,
       name: normalizedUsername,
@@ -637,6 +637,7 @@ const githubCallback = async (req, res, next) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    const now = new Date();
 
     if (!email) {
       return res.status(400).json({
@@ -650,7 +651,34 @@ const forgotPassword = async (req, res) => {
     const user = await User.findOne({
       email: normalizedEmail,
     });
+    // Reset the counter if the one-hour window has expired
+    if (
+      user.forgotPasswordAttemptExpires &&
+      now >= user.forgotPasswordAttemptExpires
+    ) {
+      user.forgotPasswordAttempts = 0;
+      user.forgotPasswordAttemptExpires = null;
+    }
 
+    // Block requests after two attempts
+    if (user.forgotPasswordAttempts >= 2) {
+      return res.status(429).json({
+        success: false,
+        message:
+          "Maximum 2 password reset attempts reached. Please try again after 1 hour.",
+      });
+    }
+
+    // Start a new one-hour window on the first attempt
+    if (!user.forgotPasswordAttemptExpires) {
+      user.forgotPasswordAttemptExpires = new Date(
+        now.getTime() + 60 * 60 * 1000,
+      );
+    }
+
+    // Count this request
+    user.forgotPasswordAttempts += 1;
+    await user.save();
     // Don't reveal whether an email exists
     if (!user) {
       return res.status(200).json({

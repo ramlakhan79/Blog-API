@@ -123,6 +123,14 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    forgotPasswordAttempts: {
+      type: Number,
+      default: 0,
+    },
+    forgotPasswordAttemptExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
