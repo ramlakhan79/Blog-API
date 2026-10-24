@@ -21,6 +21,8 @@ const {
 
 const { protect, adminOnly, contributorOnly, adminOrContributor } = require("../middleware/authMiddleware");
 
+const { incrementArticleView } = require("../controllers/articleViewController.js");
+
 const router = express.Router();
 
 /*
@@ -143,5 +145,7 @@ router.delete("/comments/:commentId", protect, deleteArticleComment);
 router.post("/comments/:commentId/hide", protect, hideArticleComment);
 
 router.post("/comments/:commentId/unhide", protect, unhideArticleComment);
+
+router.post("/:id/view", incrementArticleView);
 
 module.exports = router;
