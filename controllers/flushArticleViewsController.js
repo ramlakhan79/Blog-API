@@ -24,7 +24,11 @@ const flushArticleViews = async (req, res, next) => {
       });
     }
 
-    const result = await redis.eval(DRAIN_SCRIPT, [PENDING_VIEWS_KEY], []);
+    const result = await redis.eval(
+      DRAIN_SCRIPT,
+      1,
+      PENDING_VIEWS_KEY
+    );
 
     const values = Array.isArray(result) ? result : [];
 
@@ -55,7 +59,10 @@ const flushArticleViews = async (req, res, next) => {
         filter: {
           _id: new mongoose.Types.ObjectId(id),
           published: true,
-          $or: [{ archived: false }, { archived: { $exists: false } }],
+          $or: [
+            { archived: false },
+            { archived: { $exists: false } },
+          ],
         },
         update: {
           $inc: { views: count },
@@ -71,20 +78,23 @@ const flushArticleViews = async (req, res, next) => {
       success: true,
       message: "Article views flushed successfully",
       articlesUpdated: bulkResult.modifiedCount,
-      viewsFlushed: counts.reduce((total, item) => total + item.count, 0),
+      viewsFlushed: counts.reduce(
+        (total, item) => total + item.count,
+        0
+      ),
     });
   } catch (error) {
     if (counts.length > 0) {
       try {
         await Promise.all(
           counts.map(({ id, count }) =>
-            redis.hincrby(PENDING_VIEWS_KEY, id, count),
-          ),
+            redis.hincrby(PENDING_VIEWS_KEY, id, count)
+          )
         );
       } catch (restoreError) {
         console.error(
           "CRITICAL: Unable to restore pending views",
-          restoreError,
+          restoreError
         );
       }
     }
@@ -93,6 +103,4 @@ const flushArticleViews = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  flushArticleViews,
-};
+module.exports = { flushArticleViews };

@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+const { Redis } = require("@upstash/redis");
 
 if (
   !process.env.UPSTASH_REDIS_REST_URL ||
@@ -12,4 +12,4 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-export default redis;
+module.exports = redis;
