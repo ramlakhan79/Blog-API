@@ -24,11 +24,7 @@ const flushArticleViews = async (req, res, next) => {
       });
     }
 
-    const result = await redis.eval(
-      DRAIN_SCRIPT,
-      1,
-      PENDING_VIEWS_KEY
-    );
+    const result = await redis.eval(DRAIN_SCRIPT, [PENDING_VIEWS_KEY], []);
 
     const values = Array.isArray(result) ? result : [];
 
