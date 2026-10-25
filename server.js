@@ -19,6 +19,7 @@ const testMailRoutes = require("./routes/testMailRoutes");
 const articlePdfRoutes = require("./routes/articlePdfRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const testimonialRoutes = require("./routes/testimonialRoutes");
+const cronRoutes = require("./routes/cronRoutes");
 
 /*
 |--------------------------------------------------------------------------
@@ -132,6 +133,14 @@ app.use("/api/test", testMailRoutes);
 */
 
 app.use("/api/article-pdfs", articlePdfRoutes);
+
+/*
+|--------------------------------------------------------------------------
+| Cron Routes
+|--------------------------------------------------------------------------
+*/
+
+app.use("/api/cron", cronRoutes);
 
 /*
 |--------------------------------------------------------------------------
