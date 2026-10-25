@@ -1,6 +1,6 @@
 const redis = require("../config/redis");
 const mongoose = require("mongoose");
-const { Article } = require("../models/Article");
+const Article = require("../models/Article");
 
 const PENDING_VIEWS_KEY = "article_views_pending";
 
