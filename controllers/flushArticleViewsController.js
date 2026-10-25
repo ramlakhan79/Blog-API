@@ -70,12 +70,12 @@ const flushArticleViews = async (req, res, next) => {
       ordered: false,
     });
 
-    console.log("MongoDB bulk result:", {
-      matchedCount: bulkResult.matchedCount,
-      modifiedCount: bulkResult.modifiedCount,
-      upsertedCount: bulkResult.upsertedCount,
-    });
-    
+    // console.log("MongoDB bulk result:", {
+    //   matchedCount: bulkResult.matchedCount,
+    //   modifiedCount: bulkResult.modifiedCount,
+    //   upsertedCount: bulkResult.upsertedCount,
+    // });
+
     return res.status(200).json({
       success: true,
       message: "Article views flushed successfully",

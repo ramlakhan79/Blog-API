@@ -49,7 +49,7 @@
 
 const mongoose = require("mongoose");
 const redis = require("../config/redis");
-const { Article } = require("../models/Article");
+const Article = require("../models/Article");
 
 const PENDING_VIEWS_KEY = "article_views_pending";
 
@@ -78,7 +78,7 @@ const incrementArticleView = async (req, res, next) => {
     }
 
     const pendingViews = await redis.hincrby(PENDING_VIEWS_KEY, id, 1);
-
+    // console.log(`Incremented pending views for article ${id}. Total pending views: ${pendingViews}`);
     return res.status(202).json({
       success: true,
       message: "Article view queued",
