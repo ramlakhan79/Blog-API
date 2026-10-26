@@ -23,6 +23,11 @@ const { protect, adminOnly, contributorOnly, adminOrContributor } = require("../
 
 const { incrementArticleView } = require("../controllers/articleViewController.js");
 
+const {
+  upload,
+  uploadArticleImage,
+} = require("../controllers/articleImageController");
+
 const router = express.Router();
 
 /*
@@ -68,6 +73,14 @@ router.get("/:id/previous", getPreviousArticle);
 router.post("/", protect, adminOrContributor, createArticle);
 
 router.put("/:id", protect, adminOrContributor, updateArticle);
+
+router.post(
+  "/upload-cover",
+  protect,
+  adminOrContributor,
+  upload.single("image"),
+  uploadArticleImage,
+);
 
 /*
 |--------------------------------------------------------------------------
